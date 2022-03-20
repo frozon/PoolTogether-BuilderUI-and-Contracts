@@ -1,0 +1,23 @@
+# Used to deploy to testnets
+export HDWALLET_MNEMONIC=''
+
+# Used to deploy to testnets
+export INFURA_API_KEY='dd63801268094e4494864f29ccd917b2'
+
+# Used for verifying contracts on Etherscan
+export ETHERSCAN_API_KEY=''
+
+# Used for verifying contracts on Binance
+export BSCSCAN_API_KEY=''
+
+# Used for verifying contracts on PolygonScan
+export POLYGONSCAN_API_KEY='TS7A9SKYCUNP93H8XVZ3MTSV2CFY939PUR'
+
+# Required for forking
+export ALCHEMY_URL='https://polygon-mainnet.g.alchemy.com/v2/8iTSR-YxYfOzSNcFE2xAtZCiDDpY6Y-M'
+
+# Block number from which to fork
+export FORK_BLOCK_NUMBER=''
+
+#required for mainnet governance forking testnets
+export PATH_TO_GOVERNANCE_REPO=''
