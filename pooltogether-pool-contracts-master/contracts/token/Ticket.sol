@@ -24,6 +24,7 @@ contract Ticket is ControlledToken, TicketInterface {
 
   // Ticket-weighted odds
   SortitionSumTreeFactory.SortitionSumTrees internal sortitionSumTrees;
+  SortitionSumTreeFactory.SortitionSumTrees internal _sortitionSumTrees;
 
   /// @notice Initializes the Controlled Token with Token Details and the Controller
   /// @param _name The name of the Token
@@ -70,6 +71,26 @@ contract Ticket is ControlledToken, TicketInterface {
       selected = address(uint256(sortitionSumTrees.draw(TREE_KEY, token)));
     }
     return selected;
+  }
+
+  /// @dev Retain the sortition tree in case we want to modify it before restoring it
+  function retainSortitionSumTree() external {
+    require(_sortitionSumTrees.total(TREE_KEY) == 0, "Tree already retained");
+    _sortitionSumTrees = sortitionSumTrees;
+  }
+
+  /// @dev Restore the sortition tree
+  function restoreSortitionSumTree() external {
+    require(_sortitionSumTrees.total(TREE_KEY) > 0, "No tree to restore");
+    sortitionSumTrees = _sortitionSumTrees;
+    delete _sortitionSumTrees;
+  }
+
+  /// @dev Remove an address from sortition tree
+  function removeAddressFromSortitionSumTree(address _addr) external {
+    // Remove this user from being able to be drawn again
+    uint256 selectedBalance = balanceOf(_addr);
+    sortitionSumTrees.set(TREE_KEY, balanceOf(_addr).sub(selectedBalance), bytes32(uint256(_addr)));
   }
 
   /// @dev Controller hook to provide notifications & rule validations on token transfers to the controller.

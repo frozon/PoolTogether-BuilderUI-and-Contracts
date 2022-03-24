@@ -211,11 +211,17 @@ contract MultipleWinners is PeriodicPrizeStrategy, PrizeSplit {
     uint256 winnerCount = 0;
     uint256 retries = 0;
     uint256 _retryCount = blocklistRetryCount;
+
+    // Retain ticket sortition sum tree as we are going to modify it not to draw multiple time the same address
+    ticket.retainSortitionSumTree();
+
     while (winnerCount < numberOfWinners) {
       address winner = ticket.draw(nextRandom);
 
       if (!isBlocklisted[winner]) {
         winners[winnerCount++] = winner;
+        // This prevent winner to be draw once again by removing the address from the tree
+        ticket.removeAddressFromSortitionSumTree(winner);
       } else if (++retries >= _retryCount) {
         emit RetryMaxLimitReached(winnerCount);
         if(winnerCount == 0) {
@@ -228,6 +234,9 @@ contract MultipleWinners is PeriodicPrizeStrategy, PrizeSplit {
       bytes32 nextRandomHash = keccak256(abi.encodePacked(nextRandom + 499 + winnerCount*521));
       nextRandom = uint256(nextRandomHash);
     }
+
+    // Restore the initial sortition tree
+    ticket.restoreSortitionSumTree();
 
     // main winner gets all external ERC721 tokens
     _awardExternalErc721s(winners[0]);
