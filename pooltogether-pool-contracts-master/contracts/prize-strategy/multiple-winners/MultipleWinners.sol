@@ -295,7 +295,6 @@ contract MultipleWinners is PeriodicPrizeStrategy, PrizeSplit {
   /// @dev Add a winner address to the blocked list
   function addWinner(address _winner) internal {
     if(winnerSinceDrawCount[_winner] == 0) {
-      winnerSinceDrawCount[_winner] = 0;
       winnerList.push(_winner);
     }
   }
