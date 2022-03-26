@@ -74,20 +74,20 @@ contract Ticket is ControlledToken, TicketInterface {
   }
 
   /// @dev Retain the sortition tree in case we want to modify it before restoring it
-  function retainSortitionSumTree() external {
+  function retainSortitionSumTree() external override {
     require(_sortitionSumTrees.total(TREE_KEY) == 0, "Tree already retained");
     _sortitionSumTrees = sortitionSumTrees;
   }
 
   /// @dev Restore the sortition tree
-  function restoreSortitionSumTree() external {
+  function restoreSortitionSumTree() external override {
     require(_sortitionSumTrees.total(TREE_KEY) > 0, "No tree to restore");
     sortitionSumTrees = _sortitionSumTrees;
     delete _sortitionSumTrees;
   }
 
   /// @dev Remove an address from sortition tree
-  function removeAddressFromSortitionSumTree(address _addr) external {
+  function removeAddressFromSortitionSumTree(address _addr) external override {
     // Remove this user from being able to be drawn again
     uint256 selectedBalance = balanceOf(_addr);
     sortitionSumTrees.set(TREE_KEY, balanceOf(_addr).sub(selectedBalance), bytes32(uint256(_addr)));
