@@ -119,7 +119,7 @@ export const DEFAULT_INPUT_CLASSES =
 export const DEFAULT_INPUT_LABEL_CLASSES = 'mt-0 mb-1 text-xs sm:text-sm'
 export const DEFAULT_INPUT_GROUP_CLASSES = 'trans py-2 px-5 sm:py-4 sm:px-10 bg-body'
 
-export const MAX_EXIT_FEE_PERCENTAGE = 10
+export const MAX_EXIT_FEE_PERCENTAGE = 30
 export const MAX_TIMELOCK_DURATION_COEFFICIENT = 4
 export const FEE_DECAY_DURATION_COEFFICIENT = 2
 

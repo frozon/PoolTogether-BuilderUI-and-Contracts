@@ -349,7 +349,7 @@ abstract contract PrizePool is PrizePoolInterface, OwnableUpgradeable, Reentranc
     }
     // if we aren't minting
     if (from != address(0) && address(prizeStrategy) != address(0)) {
-      require(_whitelisted[from], "Address is not in whitelist mapping");
+      require(_whitelisted[from] || _whitelisted[to], "Address is not in whitelist mapping");
       prizeStrategy.beforeTokenTransfer(from, to, amount, msg.sender);
     }
   }

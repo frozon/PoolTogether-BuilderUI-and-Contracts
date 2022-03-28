@@ -17,6 +17,15 @@ contract MultipleWinners is PeriodicPrizeStrategy, PrizeSplit {
   // Mapping of addresses isBlocked status. Can prevent an address from selected during award distribution
   mapping(address => bool) public isBlocklisted;
 
+  // Mapping of previous winner addresses against their blocked draw count
+  mapping(address => uint256) public winnerSinceDrawCount;
+
+  // Previous winner addresses
+  address[] public winnerList;
+
+  // Number of draw previous winner is being blocked
+  uint256 public prizeBlockedCount = 2;
+
   // Carry over the awarded prize for the next drawing when selected winners is less than __numberOfWinners
   bool public carryOverBlocklist;
 
@@ -211,11 +220,34 @@ contract MultipleWinners is PeriodicPrizeStrategy, PrizeSplit {
     uint256 winnerCount = 0;
     uint256 retries = 0;
     uint256 _retryCount = blocklistRetryCount;
+
+    // Retain ticket sortition sum tree as we are going to modify it not to draw multiple time the same address
+    ticket.retainSortitionSumTree();
+
+    for(uint256 i = 0; i < winnerList.length; i++) {
+      address _winner = winnerList[i];
+
+      if(winnerSinceDrawCount[_winner] >= prizeBlockedCount) {
+        // If previous winner has been blocked long enough remove it from the blocked list
+        delete winnerSinceDrawCount[_winner];
+        delete winnerList[i];
+
+      } else {
+        // If previous winner is still blocked, remove it from the to draw list
+        winnerSinceDrawCount[_winner] += 1;
+        ticket.removeAddressFromSortitionSumTree(_winner);
+      }
+    }
+
     while (winnerCount < numberOfWinners) {
       address winner = ticket.draw(nextRandom);
 
       if (!isBlocklisted[winner]) {
         winners[winnerCount++] = winner;
+        // This prevent winner to be draw once again by removing the address from the tree
+        ticket.removeAddressFromSortitionSumTree(winner);
+        // add winner to saved winner list
+        addWinner(winner);
       } else if (++retries >= _retryCount) {
         emit RetryMaxLimitReached(winnerCount);
         if(winnerCount == 0) {
@@ -228,6 +260,9 @@ contract MultipleWinners is PeriodicPrizeStrategy, PrizeSplit {
       bytes32 nextRandomHash = keccak256(abi.encodePacked(nextRandom + 499 + winnerCount*521));
       nextRandom = uint256(nextRandomHash);
     }
+
+    // Restore the initial sortition tree
+    ticket.restoreSortitionSumTree();
 
     // main winner gets all external ERC721 tokens
     _awardExternalErc721s(winners[0]);
@@ -255,5 +290,18 @@ contract MultipleWinners is PeriodicPrizeStrategy, PrizeSplit {
     } else {
       _awardExternalErc20s(winners[0]);
     }
+  }
+
+  /// @dev Add a winner address to the blocked list
+  function addWinner(address _winner) internal {
+    if(winnerSinceDrawCount[_winner] == 0) {
+      winnerList.push(_winner);
+    }
+  }
+
+  /// @dev change how long a previous winner is blocked for being inside the drawing list again
+  function setPrizeBlockedCount(uint256 _prizeBlockedCount) public onlyOwner {
+    require(_prizeBlockedCount < 10, "distribution blocked count too high");
+    prizeBlockedCount = _prizeBlockedCount;
   }
 }
