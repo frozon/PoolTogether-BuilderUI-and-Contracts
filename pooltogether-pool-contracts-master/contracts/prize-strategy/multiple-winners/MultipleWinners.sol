@@ -17,6 +17,9 @@ contract MultipleWinners is PeriodicPrizeStrategy, PrizeSplit {
   // Mapping of addresses isBlocked status. Can prevent an address from selected during award distribution
   mapping(address => bool) public isBlocklisted;
 
+  // Mapping of address isBlockedFromNextDraw status. Can prevent an address from selected multiple time during award distribution
+  mapping(address => bool) public isBlockedFromNextDraw;
+
   // Mapping of previous winner addresses against their blocked draw count
   mapping(address => uint256) public winnerSinceDrawCount;
 
@@ -24,7 +27,7 @@ contract MultipleWinners is PeriodicPrizeStrategy, PrizeSplit {
   address[] public winnerList;
 
   // Number of draw previous winner is being blocked
-  uint256 public prizeBlockedCount = 2;
+  uint256 public prizeBlockedCount;
 
   // Carry over the awarded prize for the next drawing when selected winners is less than __numberOfWinners
   bool public carryOverBlocklist;
@@ -102,6 +105,8 @@ contract MultipleWinners is PeriodicPrizeStrategy, PrizeSplit {
     );
 
     _setNumberOfWinners(_numberOfWinners);
+    blocklistRetryCount = 5;
+    prizeBlockedCount = 1;
   }
 
   /**
@@ -221,31 +226,26 @@ contract MultipleWinners is PeriodicPrizeStrategy, PrizeSplit {
     uint256 retries = 0;
     uint256 _retryCount = blocklistRetryCount;
 
-    // Retain ticket sortition sum tree as we are going to modify it not to draw multiple time the same address
-    ticket.retainSortitionSumTree();
-
     for(uint256 i = 0; i < winnerList.length; i++) {
       address _winner = winnerList[i];
 
       if(winnerSinceDrawCount[_winner] >= prizeBlockedCount) {
         // If previous winner has been blocked long enough remove it from the blocked list
+        isBlockedFromNextDraw[_winner] = false;
         delete winnerSinceDrawCount[_winner];
         delete winnerList[i];
 
       } else {
         // If previous winner is still blocked, remove it from the to draw list
         winnerSinceDrawCount[_winner] += 1;
-        ticket.removeAddressFromSortitionSumTree(_winner);
       }
     }
 
     while (winnerCount < numberOfWinners) {
       address winner = ticket.draw(nextRandom);
 
-      if (!isBlocklisted[winner]) {
+      if (!isBlocklisted[winner] && !isBlockedFromNextDraw[winner]) {
         winners[winnerCount++] = winner;
-        // This prevent winner to be draw once again by removing the address from the tree
-        ticket.removeAddressFromSortitionSumTree(winner);
         // add winner to saved winner list
         addWinner(winner);
       } else if (++retries >= _retryCount) {
@@ -260,9 +260,6 @@ contract MultipleWinners is PeriodicPrizeStrategy, PrizeSplit {
       bytes32 nextRandomHash = keccak256(abi.encodePacked(nextRandom + 499 + winnerCount*521));
       nextRandom = uint256(nextRandomHash);
     }
-
-    // Restore the initial sortition tree
-    ticket.restoreSortitionSumTree();
 
     // main winner gets all external ERC721 tokens
     _awardExternalErc721s(winners[0]);
@@ -295,6 +292,7 @@ contract MultipleWinners is PeriodicPrizeStrategy, PrizeSplit {
   /// @dev Add a winner address to the blocked list
   function addWinner(address _winner) internal {
     if(winnerSinceDrawCount[_winner] == 0) {
+      isBlockedFromNextDraw[_winner] = true;
       winnerList.push(_winner);
     }
   }

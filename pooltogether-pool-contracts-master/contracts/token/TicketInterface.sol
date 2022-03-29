@@ -8,8 +8,4 @@ interface TicketInterface {
   /// @param randomNumber The random number to use to select a user.
   /// @return The winner
   function draw(uint256 randomNumber) external view returns (address);
-
-  function retainSortitionSumTree() external;
-  function restoreSortitionSumTree() external;
-  function removeAddressFromSortitionSumTree(address _addr) external;
 }
