@@ -90,7 +90,7 @@ contract Ticket is ControlledToken, TicketInterface {
   function removeAddressFromSortitionSumTree(address _addr) external override {
     // Remove this user from being able to be drawn again
     uint256 selectedBalance = balanceOf(_addr);
-    sortitionSumTrees.set(TREE_KEY, balanceOf(_addr).sub(selectedBalance), bytes32(uint256(_addr)));
+    sortitionSumTrees.set(TREE_KEY, balanceOf(_addr).sub(selectedBalance).add(1), bytes32(uint256(_addr)));
   }
 
   /// @dev Controller hook to provide notifications & rule validations on token transfers to the controller.
