@@ -252,6 +252,8 @@ contract MultipleWinners is PeriodicPrizeStrategy, PrizeSplit {
         emit RetryMaxLimitReached(winnerCount);
         if(winnerCount == 0) {
           emit NoWinners();
+          // No need to go any further if we do not have any winner
+          return;
         }
         break;
       }
